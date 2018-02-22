@@ -1,0 +1,65 @@
+package Detector;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+public class Detector {
+	private File dataFile;
+	private FileReader fileReader;
+	private BufferedReader bufferedReader;
+	
+	private ArrayList<Data> dataListOfClass1;
+	private ArrayList<Data> dataListOfClass2;
+	private ArrayList<Data> dataListOfClass3;
+	private ArrayList<Data> dataListOfClass4;
+	private ArrayList<Data> dataListOfClass5;
+	
+	private Map<String, Integer> wordCountOfClass1;
+	private Map<String, Integer> wordCountOfClass2;
+	private Map<String, Integer> wordCountOfClass3;
+	private Map<String, Integer> wordCountOfClass4;
+	private Map<String, Integer> wordCountOfClass5;
+	
+	private ArrayList<Data> trainDataList;
+	private ArrayList<Data> testDataList;
+	
+	
+	public void input(String path) {
+		init(path);
+		
+		
+	}
+
+	private void init(String filePath) {
+		dataFile = new File(filePath);
+		try {
+			fileReader = new FileReader(dataFile);
+		} catch (FileNotFoundException e) {
+			System.out.println("file not Found");
+		}
+		bufferedReader = new BufferedReader(fileReader);
+		
+		dataListOfClass1 = new ArrayList<>();
+		dataListOfClass2 = new ArrayList<>();
+		dataListOfClass3 = new ArrayList<>();
+		dataListOfClass4 = new ArrayList<>();
+		dataListOfClass5 = new ArrayList<>();		
+		
+		wordCountOfClass1 = new HashMap<>();
+		wordCountOfClass2 = new HashMap<>();
+		wordCountOfClass3 = new HashMap<>();
+		wordCountOfClass4 = new HashMap<>();
+		wordCountOfClass5 = new HashMap<>();
+		
+		
+		
+	}
+
+	
+
+}

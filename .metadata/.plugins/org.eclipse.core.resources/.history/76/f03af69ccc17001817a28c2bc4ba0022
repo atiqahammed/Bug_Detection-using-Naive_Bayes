@@ -1,0 +1,12 @@
+package Detector;
+
+public class Detector {
+
+	public void input(String path) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	
+
+}

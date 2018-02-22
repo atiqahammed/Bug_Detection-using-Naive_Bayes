@@ -1,0 +1,22 @@
+package Detector;
+
+import java.io.File;
+
+public class Detector {
+	private File dataFile;
+	private FileReader fileReader;
+	
+	public void input(String path) {
+		
+		init(path);
+		
+	}
+
+	private void init(String filePath) {
+		dataFile = new File(filePath);
+		
+	}
+
+	
+
+}
