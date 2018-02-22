@@ -27,6 +27,7 @@ public class Detector {
 	private Map<String, Integer> wordCountOfClass3;
 	private Map<String, Integer> wordCountOfClass4;
 	private Map<String, Integer> wordCountOfClass5;
+	private Map<String, Integer> totalCount;
 	
 	private ArrayList<Data> trainDataList;
 	private ArrayList<Data> testDataList;
@@ -114,10 +115,71 @@ public class Detector {
 		}
 		
 		train();
+		test();
 		
 		//System.out.println(trainDataList.size());
 		//System.out.println(testDataList.size());
 		
+	}
+
+	private void test() {
+		int count = 0;
+		for(int i = 0; i < testDataList.size(); i++)
+		{
+			String result = getResult(testDataList.get(i));
+			if(result.equals(testDataList.get(0).getValueInIndex(0))) count++;
+			//System.out.println(result +", actual - " +testDataList.get(0).getValueInIndex(0));
+		}
+		
+		double acc = (double) count/testDataList.size();
+		System.out.println(acc);
+		
+	}
+
+	private String getResult(Data data) {
+		double []probability = {1.0, 1.0, 1.0, 1.0, 1.0};
+		
+		//System.out.println("i am here");
+		//for(int j = 0; j < data)
+		
+		for(int i = 0; i < probability.length; i++)
+		{
+			
+			
+			String words[] = data.getAllDataValue(); 
+			for( int j = 1; j < words.length; j++) {
+				String word = words[j];
+				//System.out.print(word +" > ");
+				if(wordListMaping.get(classValues[i]).containsKey(word) && totalCount.containsKey(word))
+				{
+					int totalOccarance = totalCount.get(word);
+					int occaranceInThisClass = wordListMaping.get(classValues[i]).get(word);
+					probability[i] *= (double)occaranceInThisClass / totalOccarance; 
+					
+					//System.out.print("class value > "+classValues[i] +" " + wordListMaping.get(classValues[i]).get(word) +" / " + totalCount.get(word) +" || ");
+					//probability[i] *= wordListMaping.get(classValues[i]).get(word) / totalCount.get(word);
+				}
+				//System.out.println();
+			}
+		}
+		
+		/*for(int i = 0; i < probability.length; i++)
+			System.out.println(probability[i]);
+		*/
+		int index = 0;
+		for(int i=0; i < probability.length; i++)
+		{
+			if(probability[i] > probability[index])
+				index = i;
+		}
+		
+		System.out.println("highest " + index);
+		
+		return Integer.toString(index+1);
+		
+		
+		
+		//return null;
 	}
 
 	private void train() {
@@ -127,25 +189,50 @@ public class Detector {
 		wordCountOfClass3 = new HashMap<>();
 		wordCountOfClass4 = new HashMap<>();
 		wordCountOfClass5 = new HashMap<>();
+		totalCount = new HashMap<>();
+		
+		wordListMaping = new HashMap<>();
+		wordListMaping.put("1", wordCountOfClass1);
+		wordListMaping.put("2", wordCountOfClass2);
+		wordListMaping.put("3", wordCountOfClass3);
+		wordListMaping.put("4", wordCountOfClass4);
+		wordListMaping.put("5", wordCountOfClass5);
+		
+		
+		/*
+		wordListMaping.get("1").put("hello", 2);
+		
+		if(wordListMaping.get(classValues[0]).containsKey("helo")) {
+			System.out.println("its ok");
+		} else {
+			System.out.println("not ok");
+		}*/
+		
+		
+		
+		
 		
 		for(int i = 0; i < trainDataList.size(); i++) {
 			String key  = trainDataList.get(i).getValueInIndex(0);
 			int numberOfWord  = trainDataList.get(i).getColumnSize();
-			//System.out.println(key);
-			//System.out.println(trainDataList.get(i).getColumnSize());
-			
-			for(int j = 1; j < numberOfWord; j++) {
+			String data[] = trainDataList.get(i).getAllDataValue();
+			//System.out.println(data.length);
+			for(int j = 1; j < numberOfWord; j++)
+			{
+				String word = data[j];
 				
-				String word = trainDataList.get(i).getValueInIndex(j);
-				System.out.print(word + " ");
-				/*if(!wordListMaping.get(key).containsKey(word)) {
-					int x = wordListMaping.get(key).get(word);
-					wordListMaping.get(key).put(word, 1);
-				} else {
-					
+				if(wordListMaping.get(key).containsKey(word)) {
 					int x = wordListMaping.get(key).get(word);
 					wordListMaping.get(key).put(word, x+1);
-				}*/
+				} else {
+					wordListMaping.get(key).put(word, 1);
+				}
+				
+				if(totalCount.containsKey(word)){
+					int x = totalCount.get(word);
+					totalCount.put(word, x+1);
+				}
+				else totalCount.put(word, 1);
 			}
 		}
 			
