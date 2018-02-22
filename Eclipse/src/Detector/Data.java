@@ -14,6 +14,10 @@ public class Data {
 		return valueOfAttributes[index];
 	}
 	
+	public String[] getAllDataValue() {
+		return valueOfAttributes;
+	}
+	
 	public int getColumnSize(){
 		return valueOfAttributes.length;
 	}
