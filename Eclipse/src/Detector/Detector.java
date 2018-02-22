@@ -16,6 +16,9 @@ public class Detector {
 	private FileReader fileReader;
 	private BufferedReader bufferedReader;
 
+	private int totalTest = 0;
+	private int totalRightAns = 0;
+
 	private ArrayList<Data> dataListOfClass1;
 	private ArrayList<Data> dataListOfClass2;
 	private ArrayList<Data> dataListOfClass3;
@@ -29,6 +32,15 @@ public class Detector {
 	private Map<String, Integer> wordCountOfClass5;
 	private Map<String, Integer> totalCount;
 
+
+	private ArrayList<Integer> takenClass1;
+	private ArrayList<Integer> takenClass2;
+	private ArrayList<Integer> takenClass3;
+	private ArrayList<Integer> takenClass4;
+	private ArrayList<Integer> takenClass5;
+	private Map<String, ArrayList<Integer>> takenClassMaping;
+
+
 	private ArrayList<Data> trainDataList;
 	private ArrayList<Data> testDataList;
 
@@ -37,34 +49,23 @@ public class Detector {
 	private Map<String, Map<String, Integer>> wordListMaping;
 
 
+	private Map<String, Integer> totalGoldLevel;
+	private Map<String, Integer> totalPredectedAs;
+	private Map<String, Integer> truePositive;
+
+
+
 	public void input(String path) {
 		init(path);
-
 		String input = null;
 		try {
 			while ((input = bufferedReader.readLine()) != null) {
 				String data[] = input.split(" ");
-				//System.out.println(data[0]);
 				dataListMaping.get(data[0]).add(new Data(data));
-				//System.out.println(dataListMaping.get(data[0]).size());
 			}
-
-			//for(int i = 0; i < classValues.length; i++)
-			//	System.out.println(dataListMaping.get(classValues[i]).size());
-
-			/*
-			System.out.println(wordCountOfClass1.size());
-			System.out.println(wordCountOfClass2.size());
-			System.out.println(wordCountOfClass3.size());
-			System.out.println(wordCountOfClass4.size());
-			System.out.println(wordCountOfClass5.size());
-			*/
-
 		} catch (IOException e) {
 			System.out.println("got error in reading data using bufferReader");
 		}
-
-
 	}
 
 	private void init(String filePath) {
@@ -98,27 +99,66 @@ public class Detector {
 		wordListMaping.put("4", wordCountOfClass4);
 		wordListMaping.put("5", wordCountOfClass5);
 
-		//dataListOfClass1.add(new Data());
-		//System.out.println(dataListOfClass1.size());
-		//System.out.println(dataListMaping.get("1").size());
+		takenClass1 = new ArrayList<>();
+		takenClass2 = new ArrayList<>();
+		takenClass3 = new ArrayList<>();
+		takenClass4 = new ArrayList<>();
+		takenClass5 = new ArrayList<>();
 
+		takenClassMaping = new HashMap<String, ArrayList<Integer>>();
+		takenClassMaping.put("1", takenClass1);
+		takenClassMaping.put("2", takenClass2);
+		takenClassMaping.put("3", takenClass3);
+		takenClassMaping.put("4", takenClass4);
+		takenClassMaping.put("5", takenClass5);
 
+		totalGoldLevel = new HashMap<>();
+		totalGoldLevel.put("1", 0);
+		totalGoldLevel.put("2", 0);
+		totalGoldLevel.put("3", 0);
+		totalGoldLevel.put("4", 0);
+		totalGoldLevel.put("5", 0);
+
+		totalPredectedAs =  new HashMap<String, Integer>();
+		totalPredectedAs.put("1", 0);
+		totalPredectedAs.put("2", 0);
+		totalPredectedAs.put("3", 0);
+		totalPredectedAs.put("4", 0);
+		totalPredectedAs.put("5", 0);
+
+		truePositive = new HashMap<String, Integer>();
+		truePositive.put("1", 0);
+		truePositive.put("2", 0);
+		truePositive.put("3", 0);
+		truePositive.put("4", 0);
+		truePositive.put("5", 0);
 	}
 
 	public void process() {
 
-		trainDataList = new ArrayList<>();
-		testDataList = new ArrayList<>();
+		for(int j = 0; j < 10; j++){
+			trainDataList = new ArrayList<>();
+			testDataList = new ArrayList<>();
+
+			for(int i = 0; i < classValues.length; i++) {
+				randomize2(classValues[i]);
+			}
+
+			train();
+			test2();
+		}
+		double accuracy = (double) totalRightAns / totalTest;
+		System.out.println("accuracy = " + accuracy);
 
 		for(int i = 0; i < classValues.length; i++) {
-			randomize(classValues[i]);
+			double precision = (double) truePositive.get(classValues[i])/ totalPredectedAs.get(classValues[i]);
+			double recall = (double) truePositive.get(classValues[i]) / totalGoldLevel.get(classValues[i]);
+			double fMeasure = (2 * precision * recall) / (precision + recall);
+			System.out.println("class value as > " + classValues[i]);
+			System.out.println("precision = " + precision);
+			System.out.println("recall = " + recall);
+			System.out.println("f-Measure = " + fMeasure);
 		}
-
-		train();
-		test();
-
-		//System.out.println(trainDataList.size());
-		//System.out.println(testDataList.size());
 
 	}
 
@@ -127,15 +167,43 @@ public class Detector {
 		for(int i = 0; i < testDataList.size(); i++)
 		{
 			System.out.println(i+ " --------------------------------------");
-			String result = getResult2(testDataList.get(i));
-			if(result.equals(testDataList.get(i).getValueInIndex(0))) count++;
-			System.out.println(result +", actual " +testDataList.get(0).getValueInIndex(0));
+			String result = getResult(testDataList.get(i));
+			if(result.equals(testDataList.get(i).getValueInIndex(0))) {
+				count++;
+				totalRightAns++;
+			}
+			System.out.println(result +", actual " +testDataList.get(i).getValueInIndex(0));
 		}
+
+		totalTest += testDataList.size();
 
 		double acc = (double) count/testDataList.size();
 		System.out.println(acc);
+	}
 
+	private void test2() {
+		int count = 0;
+		for(int i = 0; i < testDataList.size(); i++)
+		{
+			//System.out.println(i+ " --------------------------------------");
+			String original = testDataList.get(i).getValueInIndex(0);
+			String result = getResult2(testDataList.get(i));
+			if(result.equals(testDataList.get(i).getValueInIndex(0))) {
+				count++;
+				totalRightAns++;
+				int x = truePositive.get(result);
+				truePositive.put(result, x+1);
+			}
 
+			totalPredectedAs.put(result, totalPredectedAs.get(result)+1);
+			totalGoldLevel.put(original, totalGoldLevel.get(original)+1);
+			//System.out.println(result +", actual " +testDataList.get(i).getValueInIndex(0));
+		}
+
+		totalTest += testDataList.size();
+
+		//double acc = (double) count/testDataList.size();
+		//System.out.println(acc);
 	}
 
 	private String getResult2(Data data) {
@@ -160,17 +228,16 @@ public class Detector {
 			}
 		}
 
-		for(int i = 0; i < probability.length; i++)
+		/*for(int i = 0; i < probability.length; i++)
 			System.out.println(probability[i]);
-
+		*/
 		int index = 0;
-		for(int i=0; i < probability.length; i++)
-		{
+		for(int i=0; i < probability.length; i++) {
 			if(probability[i] > probability[index])
 				index = i;
 		}
 
-		System.out.println("highest " + index);
+		//System.out.println("highest " + index);
 
 		return Integer.toString(index+1);
 	}
@@ -178,26 +245,20 @@ public class Detector {
 	private String getResult(Data data) {
 		int []probability = {0, 0, 0, 0, 0};
 
-		//System.out.println("i am here");
-		//for(int j = 0; j < data)
-
-
 		String words[] = data.getAllDataValue();
-		System.out.println("nu,ber of Word " + words.length);
-		for(int i = 1; i < words.length; i++)
-		{
+		//System.out.println("nu,ber of Word " + words.length);
+		for(int i = 1; i < words.length; i++) {
 			int index = selectClassForThisWord(words[i]);
-			System.out.println("got Index > " + index);
+			//System.out.println("got Index > " + index);
 			probability[index]++;
 		}
 
 		int index = 0;
-
 		for(int i = 0; i < probability.length; i++) {
 			if(probability[i] > probability[index]) index = i;
-			System.out.print(probability[i] + " ");
+			//System.out.print(probability[i] + " ");
 		}
-		System.out.println(" result " + index);
+		//System.out.println(" result " + index);
 
 		/*
 		for(int i = 0; i < probability.length; i++)
@@ -236,10 +297,6 @@ public class Detector {
 		System.out.println("highest " + index);
 */
 		return Integer.toString(index+1);
-
-
-
-		//return null;
 	}
 
 	private int selectClassForThisWord(String word) {
@@ -248,12 +305,12 @@ public class Detector {
 		int highest = 0;
 
 
-		System.out.println(word);
+		//System.out.println(word);
 		for(int i = 0; i < classValues.length; i++)
 		{
 			if(wordListMaping.get(classValues[i]).containsKey(word)){
 				int count  = wordListMaping.get(classValues[i]).get(word);
-				System.out.println("class value " + classValues[i] +",   count " + count);
+				//System.out.println("class value " + classValues[i] +",   count " + count);
 				if(count > highest) {
 					highest = count;
 					index = i;
@@ -261,17 +318,17 @@ public class Detector {
 			}
 			else
 			{
-				System.out.println("class value " + classValues[i] +",   count not found");
+			//	System.out.println("class value " + classValues[i] +",   count not found");
 			}
 
 
 		}
 
-		if(totalCount.containsKey(word))
-			System.out.println("total count > " +totalCount.get(word));
+		//if(totalCount.containsKey(word))
+			//System.out.println("total count > " +totalCount.get(word));
 
-		System.out.println("hie " + highest);
-		System.out.println("final index " + index);
+		//System.out.println("hie " + highest);
+		//System.out.println("final index " + index);
 
 
 		return index;
@@ -329,7 +386,8 @@ public class Detector {
 
 		while(choosenTestDataIndex.size() < testSize) {
 			int x = new Random().nextInt(totalSize);
-			if(!choosenTestDataIndex.contains(x)) choosenTestDataIndex.add(x);
+			if(!choosenTestDataIndex.contains(x))
+				choosenTestDataIndex.add(x);
 		}
 
 		for(int i = 0; i < totalSize; i++) {
@@ -337,4 +395,30 @@ public class Detector {
 			else trainDataList.add(dataListMaping.get(classValue).get(i));
 		}
 	}
+
+	private void randomize2(String classValue) {
+
+		int totalSize = dataListMaping.get(classValue).size();
+		int testSize = totalSize / 10;
+		int  traningSize = totalSize - testSize;
+		ArrayList<Integer> choosenTestDataIndex = new ArrayList<>();
+
+		while(choosenTestDataIndex.size() < testSize) {
+			int x = new Random().nextInt(totalSize);
+
+			if(!takenClassMaping.get(classValue).contains(x)){
+				choosenTestDataIndex.add(x);
+				takenClassMaping.get(classValue).add(x);
+
+			}
+			/*if(!choosenTestDataIndex.contains(x))
+				choosenTestDataIndex.add(x);*/
+		}
+
+		for(int i = 0; i < totalSize; i++) {
+			if(choosenTestDataIndex.contains(i)) testDataList.add(dataListMaping.get(classValue).get(i));
+			else trainDataList.add(dataListMaping.get(classValue).get(i));
+		}
+	}
+
 }
