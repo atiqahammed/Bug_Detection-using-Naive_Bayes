@@ -52,6 +52,8 @@ public class Detector {
 	private Map<String, Integer> totalGoldLevel;
 	private Map<String, Integer> totalPredectedAs;
 	private Map<String, Integer> truePositive;
+	private int totalTrainData_N;
+	private Map<String, Integer> countOfwordOccurInRow;
 
 
 
@@ -137,13 +139,22 @@ public class Detector {
 	public void process() {
 
 		for(int j = 0; j < 10; j++){
+			totalTrainData_N = 0;
 			trainDataList = new ArrayList<>();
 			testDataList = new ArrayList<>();
-
+			countOfwordOccurInRow = new HashMap<>();
+			
 			for(int i = 0; i < classValues.length; i++) {
 				randomize2(classValues[i]);
 			}
+			
+			//System.out.println(totalTrainData_N);
 
+			/*for(int i = 0; i < classValues.length; i++)
+			{
+				System.out.println("class " + classValues[i] + " " + dataListMaping.get(classValues[i]).size());
+			}*/
+			
 			train();
 			test2();
 		}
@@ -208,6 +219,7 @@ public class Detector {
 
 	private String getResult2(Data data) {
 		double []probability = {1.0, 1.0, 1.0, 1.0, 1.0};
+		double []ratio = new double[5];
 
 		for(int i = 0; i < probability.length; i++)
 		{
@@ -218,22 +230,54 @@ public class Detector {
 				if(wordListMaping.get(classValues[i]).containsKey(word) && totalCount.containsKey(word))
 				{
 					int totalOccarance = totalCount.get(word);
-					int occaranceInThisClass = wordListMaping.get(classValues[i]).get(word);
-					probability[i] *= (double)occaranceInThisClass / totalOccarance;
+					int occaranceInThisClass = wordListMaping.get(classValues[i]).get(word)+1;
+					probability[i] *= (double)occaranceInThisClass / (totalOccarance+1);
+					//probability[i] /= dataListMaping.get(classValues[i]).size();
+					//probability[i] *= totalCount.get(word);
+					
+					// multiplying idf 
+					double idf = (double) totalTrainData_N / (countOfwordOccurInRow.get(word)+1);
+					probability[i] *= Math.log(idf);
+					//////////////////////////
 
 					//System.out.print("class value > "+classValues[i] +" " + wordListMaping.get(classValues[i]).get(word) +" / " + totalCount.get(word) +" || ");
 					//probability[i] *= wordListMaping.get(classValues[i]).get(word) / totalCount.get(word);
 				}
+				
+				/*
+				else if(totalCount.containsKey(word) && !wordListMaping.get(classValues[i]).containsKey(word)){
+					int totalOccarance = totalCount.get(word);
+					int occaranceInThisClass = 1;
+					probability[i] *= (double)occaranceInThisClass / (totalOccarance+1);
+					
+					// multiplying idf 
+					double idf = (double) totalTrainData_N / (countOfwordOccurInRow.get(word)+1);
+					probability[i] *= Math.log(idf);
+					
+				}*/
+				
+				
 				//System.out.println();
 			}
 		}
+		
+		for(int i =0; i < ratio.length; i++)
+		{
+			double ratioOfOthers = 1.0;
+			for(int j = 0; j < ratio.length; j++)
+			{
+				if(i == j) continue;
+				ratioOfOthers *= probability[j];
+			}
+			
+			ratio[i] = probability[i]/ratioOfOthers;
+		}
 
-		/*for(int i = 0; i < probability.length; i++)
-			System.out.println(probability[i]);
-		*/
+		
+		
 		int index = 0;
-		for(int i=0; i < probability.length; i++) {
-			if(probability[i] > probability[index])
+		for(int i=0; i < ratio.length; i++) {
+			if(ratio[i] > ratio[index])
 				index = i;
 		}
 
@@ -354,6 +398,9 @@ public class Detector {
 			String key  = trainDataList.get(i).getValueInIndex(0);
 			int numberOfWord  = trainDataList.get(i).getColumnSize();
 			String data[] = trainDataList.get(i).getAllDataValue();
+			ArrayList<String> uniqueWords = new ArrayList<>();
+			
+			
 			//System.out.println(data.length);
 			for(int j = 1; j < numberOfWord; j++)
 			{
@@ -371,7 +418,24 @@ public class Detector {
 					totalCount.put(word, x+1);
 				}
 				else totalCount.put(word, 1);
+				
+				
+				///////////// idf cal
+				if(!uniqueWords.contains(word)) uniqueWords.add(word);
+				//////////////////
 			}
+			
+			//////// idf counting 
+			for(int t = 0; t < uniqueWords.size(); t++)
+			{
+				String word = uniqueWords.get(t);
+				if(!countOfwordOccurInRow.containsKey(word))
+					countOfwordOccurInRow.put(word, 1);
+				else countOfwordOccurInRow.put(word, countOfwordOccurInRow.get(word)+1);
+					
+			}
+			
+			///////////
 		}
 
 
@@ -401,6 +465,7 @@ public class Detector {
 		int totalSize = dataListMaping.get(classValue).size();
 		int testSize = totalSize / 10;
 		int  traningSize = totalSize - testSize;
+		totalTrainData_N += traningSize;
 		ArrayList<Integer> choosenTestDataIndex = new ArrayList<>();
 
 		while(choosenTestDataIndex.size() < testSize) {
